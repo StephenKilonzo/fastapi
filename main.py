@@ -1,7 +1,7 @@
 from typing import Annotated
 from enum import Enum
 from fastapi import Body, FastAPI, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 app = FastAPI()
@@ -22,15 +22,24 @@ class Student(BaseModel):
 
 
 class Item(BaseModel):
-    name: str
-    description: str | None = None
-    price: float
-    tax: float | None = None
+    name: str = Field(example="Pizza")
+    description: str | None = Field(default=None, example="A very nice Pizza")
+    price: float = Field(example=1500)
+    tax: float | None = Field(default=None, example=500)
 
 
 class User(BaseModel):
     username: str
-    full_name: str | None = None
+    email: str | None = None
+
+    # Declare Request Example Data
+    # Declare an example for a Pydantic model using Config and schema_extra
+    class Config:
+        schema_extra = {
+            "example": {"Steve",
+                        "stevekilosjb@gmail.com",
+                }
+        }
 
 
 fake_items_db = [{"item_name": "Jack"}, {"item_name": "Doo"}, {"item_name": "Showry"}]
@@ -135,3 +144,16 @@ async def read_items(q: Annotated[str | None, Query(max_length=50)] = None):
     if q:
         results.update({"q": q})
     return results
+
+
+
+# Multiple body params and query
+# The * in the path convert the path to be kwarg.
+@app.put("items/{item_id}")
+async def update_all(*, item_id: int, item: Item, user: User, importance: Annotated[int, Body(gt=0)], q:str | None = None):
+    results = {"item_id": item_id, "item": item, "user": user, "importance": importance}
+    if q:
+        results.update({"q": q})
+    return results
+
+
